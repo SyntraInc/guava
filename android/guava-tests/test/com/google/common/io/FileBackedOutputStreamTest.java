@@ -20,7 +20,6 @@ import static com.google.common.base.StandardSystemProperty.JAVA_IO_TMPDIR;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
-import static org.junit.Assert.assertThrows;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,6 +27,10 @@ import java.io.OutputStream;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.util.Arrays;
+import com.google.common.testing.GcFinalization;
+import org.junit.Rule;
+import org.junit.rules.ExpectedException;
+
 
 /**
  * Unit tests for {@link FileBackedOutputStream}.
@@ -36,6 +39,8 @@ import java.util.Arrays;
  */
 public class FileBackedOutputStreamTest extends IoTestCase {
 
+  @Rule
+  public ExpectedException thrown = ExpectedException.none();
 
   public void testThreshold() throws Exception {
     testThreshold(0, 100, true, false);
@@ -68,7 +73,9 @@ public class FileBackedOutputStreamTest extends IoTestCase {
     // Write data to go over the threshold
     if (chunk2 > 0) {
       if (JAVA_IO_TMPDIR.value().equals("/sdcard")) {
-        assertThrows(IOException.class, () -> write(out, data, chunk1, chunk2, singleByte));
+        thrown.expect(IOException.class);
+        write(out, data, chunk1, chunk2, singleByte);
+        out.close();
         return;
       }
       write(out, data, chunk1, chunk2, singleByte);
@@ -151,7 +158,9 @@ public class FileBackedOutputStreamTest extends IoTestCase {
     ByteSource source = out.asByteSource();
 
     if (JAVA_IO_TMPDIR.value().equals("/sdcard")) {
-      assertThrows(IOException.class, () -> out.write(data));
+      thrown.expect(IOException.class);
+      out.write(data);
+      out.close();
       return;
     }
     out.write(data);

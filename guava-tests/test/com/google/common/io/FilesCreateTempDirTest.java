@@ -39,7 +39,12 @@ import junit.framework.TestCase;
 public class FilesCreateTempDirTest extends TestCase {
   public void testCreateTempDir() throws IOException {
     if (JAVA_IO_TMPDIR.value().equals("/sdcard")) {
-      assertThrows(IllegalStateException.class, Files::createTempDir);
+      try {
+        Files.createTempDir();
+        fail("Expected IllegalStateException");
+      } catch (IllegalStateException expected) {
+        // Expected exception
+      }
       return;
     }
     File temp = Files.createTempDir();
